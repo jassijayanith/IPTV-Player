@@ -1,8 +1,5 @@
-# My IPTV Player — Standalone Android APK
+# My IPTV Player — Native Android
 
-The Android app bundles `index.html` inside the APK and opens it from `file:///android_asset/index.html`. It does not open the GitHub Pages URL. Internet is still needed to load the public IPTV-org playlist and live streams.
+Native Kotlin Android UI and AndroidX Media3 ExoPlayer playback. No WebView is used. The app downloads the public IPTV-org M3U playlist directly. Live streams need internet and may be unavailable or incompatible; this app does not host streams.
 
-## Update
-Upload the root `index.html` and the complete `android-wrapper/` folder, plus `.github/workflows/android-apk.yml`, keeping paths intact. Commit to `main`, then open Actions → Build Android APK. Download artifact `my-iptv-standalone-apk` from the successful run.
-
-This is a standalone app shell, but streaming still needs an internet connection. Individual third-party streams may not play in Android WebView.
+Build with GitHub Actions: commit the `android-wrapper/` folder and workflow, open Actions → Build Native Android IPTV APK, then download `my-iptv-native-apk` from the completed run's Artifacts.
