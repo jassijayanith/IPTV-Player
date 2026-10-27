@@ -46,7 +46,10 @@ input{min-width:0;flex:1}button{cursor:pointer}button.primary{background:var(--a
 </main>
 <footer class="wrap">This app does not host or redistribute video. It loads a public playlist and links to third-party streams. Stream availability and rights are determined by each provider.</footer>
 <script>
-const PLAYLIST_URL='https://iptv-org.github.io/iptv/index.m3u';
+const PLAYLIST_URLS=[
+  'https://iptv-org.github.io/iptv/index.m3u',
+  'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/index.m3u'
+];
 const video=document.querySelector('#video'), listEl=document.querySelector('#list'), statusEl=document.querySelector('#status');
 let channels=[], selected=null, showFavorites=false;
 const favorites=new Set(JSON.parse(localStorage.getItem('iptv-favorites')||'[]'));
@@ -72,9 +75,27 @@ function render(){
 }
 function escapeHtml(s){return s.replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
 async function load(){
- statusEl.textContent='Loading playlist…';
- try{const r=await fetch(PLAYLIST_URL);if(!r.ok)throw Error('Playlist request failed ('+r.status+').');const t=await r.text();channels=parseM3U(t);if(!channels.length)throw Error('No channels found in playlist.');render();statusEl.textContent=`Loaded ${channels.length.toLocaleString()} channel entries.`;}
- catch(e){statusEl.textContent='Could not load playlist: '+e.message+' You can try again later or check your connection.';}
+ const btn=document.querySelector('#loadBtn');btn.disabled=true;
+ channels=[];render();
+ let lastError='Unknown error';
+ try{
+  for(let i=0;i<PLAYLIST_URLS.length;i++){
+   statusEl.textContent=`Loading playlist source ${i+1} of ${PLAYLIST_URLS.length}…`;
+   try{
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),20000);
+    let r;
+    try { r=await fetch(PLAYLIST_URLS[i],{signal:controller.signal,cache:'no-store'}); }
+    finally { clearTimeout(timer); }
+    if(!r.ok)throw Error('HTTP '+r.status);
+    const t=await r.text();const parsed=parseM3U(t);
+    if(!parsed.length)throw Error('No readable channels in playlist');
+    channels=parsed;render();statusEl.textContent=`Loaded ${channels.length.toLocaleString()} channels.`;return;
+   }catch(e){lastError=e.name==='AbortError'?'request timed out':(e.message||String(e));}
+  }
+  statusEl.textContent='Could not load channels: '+lastError+'. Check your internet connection and tap Load channels to retry.';
+ }catch(e){statusEl.textContent='Could not load channels: '+(e.message||String(e));}
+ finally{btn.disabled=false;}
 }
 function play(c){selected=c;document.querySelector('#nowTitle').textContent=c.name;video.src=c.url;video.play().catch(()=>{statusEl.textContent='Channel selected. Tap Play; this stream may require a compatible browser or may be unavailable.'});document.querySelector('#favBtn').textContent=favorites.has(c.id)?'★ Remove favorite':'☆ Add favorite';}
 document.querySelector('#loadBtn').addEventListener('click',load);
