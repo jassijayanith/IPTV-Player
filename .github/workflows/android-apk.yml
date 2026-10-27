@@ -1,35 +1,48 @@
 name: Build Android APK
+
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "android-wrapper/**"
-      - ".github/workflows/android-apk.yml"
+
 permissions:
   contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-      - name: Install Android build tools
-        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Check Android project
+        run: |
+          if [ ! -f android-wrapper/gradlew ]; then
+            echo "Android Gradle project is missing."
+            echo "The complete Android project must be added before building an APK."
+            exit 1
+          fi
+
       - name: Build debug APK
         working-directory: android-wrapper
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
-      - name: Upload APK artifact
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: my-iptv-player-debug-apk
+          name: my-iptv-player-apk
           path: android-wrapper/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
