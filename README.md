@@ -1,14 +1,14 @@
 # My IPTV Player
 
-A starter web IPTV player using the publicly available IPTV-org M3U playlist.
+Includes:
+- `index.html`: GitHub Pages website
+- `android-wrapper/`: Android WebView wrapper that packages the same player UI into an installable APK
+- `.github/workflows/android-apk.yml`: GitHub Actions workflow to build a debug APK
 
-## Website
-1. Add `index.html` to the repository root.
-2. In repository Settings → Pages, select **Deploy from a branch**, branch `main`, folder `/ (root)`, then Save.
-3. Visit `https://jassijayanith.github.io/IPTV-Player/` after deployment.
+## Publish the website
+In repository Settings → Pages, choose Deploy from a branch, `main`, and `/ (root)`.
 
-## Android APK
-The workflow file at `.github/workflows/android-apk.yml` expects a complete Gradle Android wrapper project under `android-wrapper/`. The workflow alone does **not** make an APK: the wrapper project must also be added. Once added, go to Actions → Build Android APK → Run workflow, then download the artifact from the completed run.
+## Build the APK
+Push/commit the files to the repository. Open Actions → Build Android APK. A push to Android-related paths should trigger the workflow. When the run completes, open the run and download `my-iptv-player-debug-apk` under Artifacts.
 
-## Important
-This is a player, not a streaming service. It does not host video. Individual stream availability, geographic restrictions, playback compatibility and rights depend on each provider.
+This is a player, not a streaming service. It loads the public IPTV-org playlist and does not host video. Individual streams may fail, be geographically restricted, or be incompatible with WebView. Only watch streams you are authorized to access.
