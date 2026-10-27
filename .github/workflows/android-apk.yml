@@ -13,7 +13,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -34,13 +33,13 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Build Android APK
+      - name: Build standalone Android APK
         working-directory: android-wrapper
         run: gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: my-iptv-player-debug-apk
+          name: my-iptv-standalone-apk
           path: android-wrapper/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
