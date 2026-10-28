@@ -55,10 +55,23 @@ async function load(){const btn=document.querySelector('#loadBtn');const categor
  }catch(e){const reason=e.name==='AbortError'?'request timed out':e.message||String(e);statusEl.textContent='Could not load the selected playlist: '+reason+'. Check internet and retry.';
  }finally{btn.disabled=false;}}
 function stopPlayback(){if(hls){hls.destroy();hls=null;}video.pause();video.removeAttribute('src');video.load();}
-function play(c){stopPlayback();selected=c;document.querySelector('#nowTitle').textContent=c.name;document.querySelector('#favBtn').textContent=favorites.has(c.id)?'★ Remove favorite':'☆ Add favorite';statusEl.textContent='Connecting to '+c.name+'…';
+function play(c){
+ selected=c;
+ document.querySelector('#nowTitle').textContent=c.name;
+ document.querySelector('#favBtn').textContent=favorites.has(c.id)?'★ Remove favorite':'☆ Add favorite';
  const url=c.url;
+ // In the Android APK, hand playback to native Android Media3/ExoPlayer.
+ // This avoids WebView video/HLS crashes on older or low-memory phones.
+ if(window.AndroidPlayer && typeof window.AndroidPlayer.play === 'function'){
+   statusEl.textContent='Opening native player for '+c.name+'…';
+   try { stopPlayback(); window.AndroidPlayer.play(url,c.name); }
+   catch(e) { statusEl.textContent='Could not open native player: '+(e.message||e); }
+   return;
+ }
+ stopPlayback();
+ statusEl.textContent='Connecting to '+c.name+'…';
  if(window.Hls&&Hls.isSupported()&&(/\.m3u8($|\?)/i.test(url)||/mpegurl/i.test(c.type||''))){
-   hls=new Hls({enableWorker:true,lowLatencyMode:false});hls.loadSource(url);hls.attachMedia(video);
+   hls=new Hls({enableWorker:false,lowLatencyMode:false});hls.loadSource(url);hls.attachMedia(video);
    hls.on(Hls.Events.MANIFEST_PARSED,()=>{video.play().then(()=>statusEl.textContent='Playing '+c.name+'.').catch(()=>statusEl.textContent='Stream loaded. Tap Play to start.');});
    hls.on(Hls.Events.ERROR,(event,data)=>{if(data.fatal){statusEl.textContent='This stream could not play ('+data.type+'). Try another channel.';hls.destroy();hls=null;}});
  }else{
