@@ -1,13 +1,10 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#101827">
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827">
 <title>My IPTV Player</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#121d30;--muted:#9fb0c8;--accent:#42d3a5}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f4f7fb;font:16px system-ui,-apple-system,Segoe UI,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f4f7fb;font:16px system-ui,sans-serif}
 header{padding:22px 16px;background:linear-gradient(120deg,#152a42,#101827);border-bottom:1px solid #26364b}
 .wrap{max-width:1100px;margin:auto}h1{margin:0;font-size:1.6rem}header p{margin:6px 0 0;color:var(--muted)}
 main{padding:16px;display:grid;grid-template-columns:minmax(0,1.7fr) minmax(270px,1fr);gap:16px}
@@ -21,89 +18,61 @@ input{min-width:0;flex:1}button{cursor:pointer}button.primary{background:var(--a
 .channel span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.channel small{color:var(--muted)}
 .note{color:var(--muted);font-size:.86rem;line-height:1.5}footer{padding:0 16px 24px;color:var(--muted);font-size:.85rem}
 @media(max-width:760px){main{grid-template-columns:1fr}.list{max-height:45vh}}
-</style>
-</head>
-<body>
-<header><div class="wrap"><h1>📺 My IPTV Player</h1><p>Free-to-use player for publicly available streams</p></div></header>
+</style></head><body>
+<header><div class="wrap"><h1>📺 My IPTV Player</h1><p>Standalone player for publicly available streams</p></div></header>
 <main class="wrap">
-<section class="panel">
-<h2 id="nowTitle">Choose a channel</h2>
-<video id="video" controls playsinline preload="metadata"></video>
-<div class="controls">
-<button class="primary" id="loadBtn">Load channels</button>
-<button id="stopBtn">Stop</button>
-<button id="favBtn">☆ Add favorite</button>
-</div>
-<div id="status" role="status">Tap “Load channels” to fetch the public IPTV-org playlist.</div>
-<p class="note">Some streams may be offline, blocked in your region, or unsupported by your browser. If a channel does not play, try another stream.</p>
-</section>
-<aside class="panel">
-<h2>Channel list</h2>
-<div class="controls"><input id="search" placeholder="Search channels…" aria-label="Search channels"><select id="country" aria-label="Country filter"><option value="">All countries</option><option value="LK">Sri Lanka</option><option value="IN">India</option><option value="GB">United Kingdom</option><option value="US">United States</option></select></div>
-<div class="controls"><button id="allBtn">All channels</button><button id="favoritesBtn">★ Favorites</button></div>
-<div id="list" class="list"></div>
-</aside>
-</main>
-<footer class="wrap">This app does not host or redistribute video. It loads a public playlist and links to third-party streams. Stream availability and rights are determined by each provider.</footer>
+<section class="panel"><h2 id="nowTitle">Choose a channel</h2><video id="video" controls playsinline preload="metadata"></video>
+<div class="controls"><button class="primary" id="loadBtn">Load channels</button><button id="stopBtn">Stop</button><button id="favBtn">☆ Add favorite</button></div>
+<div id="status" role="status">Choose a category and tap “Load channels” to fetch its public playlist.</div>
+<p class="note">Some streams are offline, region-restricted, or unsupported. If one channel fails, try another.</p></section>
+<aside class="panel"><h2>Channel list</h2>
+<div class="controls"><select id="category" aria-label="Playlist category"></select><input id="search" placeholder="Search channels…" aria-label="Search channels"><select id="country" aria-label="Country filter"><option value="">All countries</option><option value="LK">Sri Lanka</option><option value="IN">India</option><option value="GB">United Kingdom</option><option value="US">United States</option></select></div>
+<div class="controls"><button id="allBtn">All channels</button><button id="favoritesBtn">★ Favorites</button></div><div id="list" class="list"></div></aside></main>
+<footer class="wrap">The app does not host video. It loads public playlist links and third-party streams.</footer>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
 <script>
-const PLAYLIST_URLS=[
-  'https://iptv-org.github.io/iptv/index.m3u',
-  'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/index.m3u'
-];
-const video=document.querySelector('#video'), listEl=document.querySelector('#list'), statusEl=document.querySelector('#status');
-let channels=[], selected=null, showFavorites=false;
+const CATEGORY_PLAYLISTS={"All categories":"https://iptv-org.github.io/iptv/index.category.m3u","Animation":"https://iptv-org.github.io/iptv/categories/animation.m3u","Auto":"https://iptv-org.github.io/iptv/categories/auto.m3u","Business":"https://iptv-org.github.io/iptv/categories/business.m3u","Classic":"https://iptv-org.github.io/iptv/categories/classic.m3u","Comedy":"https://iptv-org.github.io/iptv/categories/comedy.m3u","Cooking":"https://iptv-org.github.io/iptv/categories/cooking.m3u","Culture":"https://iptv-org.github.io/iptv/categories/culture.m3u","Documentary":"https://iptv-org.github.io/iptv/categories/documentary.m3u","Education":"https://iptv-org.github.io/iptv/categories/education.m3u","Entertainment":"https://iptv-org.github.io/iptv/categories/entertainment.m3u","Family":"https://iptv-org.github.io/iptv/categories/family.m3u","General":"https://iptv-org.github.io/iptv/categories/general.m3u","Interactive":"https://iptv-org.github.io/iptv/categories/interactive.m3u","Kids":"https://iptv-org.github.io/iptv/categories/kids.m3u","Legislative":"https://iptv-org.github.io/iptv/categories/legislative.m3u","Lifestyle":"https://iptv-org.github.io/iptv/categories/lifestyle.m3u","Movies":"https://iptv-org.github.io/iptv/categories/movies.m3u","Music":"https://iptv-org.github.io/iptv/categories/music.m3u","News":"https://iptv-org.github.io/iptv/categories/news.m3u","Outdoor":"https://iptv-org.github.io/iptv/categories/outdoor.m3u","Public":"https://iptv-org.github.io/iptv/categories/public.m3u","Relax":"https://iptv-org.github.io/iptv/categories/relax.m3u","Religious":"https://iptv-org.github.io/iptv/categories/religious.m3u","Science":"https://iptv-org.github.io/iptv/categories/science.m3u","Series":"https://iptv-org.github.io/iptv/categories/series.m3u","Shop":"https://iptv-org.github.io/iptv/categories/shop.m3u","Sports":"https://iptv-org.github.io/iptv/categories/sports.m3u","Travel":"https://iptv-org.github.io/iptv/categories/travel.m3u","Weather":"https://iptv-org.github.io/iptv/categories/weather.m3u","XXX":"https://iptv-org.github.io/iptv/categories/xxx.m3u","Undefined":"https://iptv-org.github.io/iptv/categories/undefined.m3u"};
+let PLAYLIST_URL=CATEGORY_PLAYLISTS['All categories'];
+const video=document.querySelector('#video'),listEl=document.querySelector('#list'),statusEl=document.querySelector('#status');
+let channels=[],selected=null,showFavorites=false,hls=null;
 const favorites=new Set(JSON.parse(localStorage.getItem('iptv-favorites')||'[]'));
-function parseM3U(text){
- const lines=text.split(/\r?\n/);const out=[];let meta=null;
- for(const raw of lines){const line=raw.trim();if(!line)continue;
-  if(line.startsWith('#EXTINF:')){
-   const name=(line.split(',').slice(1).join(',')||'Unnamed channel').trim();
-   const attr={};for(const m of line.matchAll(/([\w-]+)="([^"]*)"/g))attr[m[1]]=m[2];
-   meta={name,logo:attr['tvg-logo']||'',country:(attr['tvg-country']||'').split(/[;,]/)[0].trim(),group:attr['group-title']||''};
-  }else if(!line.startsWith('#')&&meta){out.push({...meta,url:line,id:line});meta=null;}
- }
- return out;
-}
-function render(){
- const q=document.querySelector('#search').value.trim().toLowerCase(), country=document.querySelector('#country').value;
+function parseM3U(text){const lines=text.split(/\r?\n/),out=[];let meta=null;
+ for(const raw of lines){const line=raw.trim();if(!line)continue;if(line.startsWith('#EXTINF:')){
+  const name=(line.split(',').slice(1).join(',')||'Unnamed channel').trim(),attr={};
+  for(const m of line.matchAll(/([\w-]+)="([^"]*)"/g))attr[m[1]]=m[2];
+  meta={name,country:(attr['tvg-country']||'').split(/[;,]/)[0].trim(),group:attr['group-title']||''};
+ }else if(!line.startsWith('#')&&meta){out.push({...meta,url:line,id:line});meta=null;}}
+ return out;}
+function render(){const q=document.querySelector('#search').value.trim().toLowerCase(),country=document.querySelector('#country').value;
  const filtered=channels.filter(c=>(!q||c.name.toLowerCase().includes(q))&&(!country||c.country.split(/[;,]/).map(x=>x.trim()).includes(country))&&(!showFavorites||favorites.has(c.id)));
- listEl.innerHTML='';
- const slice=filtered.slice(0,500);
- for(const c of slice){const b=document.createElement('button');b.className='channel';b.innerHTML=`<span>${escapeHtml(c.name)}</span><small>${favorites.has(c.id)?'★':'☆'}</small>`;
- b.addEventListener('click',()=>play(c));listEl.appendChild(b);}
- statusEl.textContent=filtered.length?`${filtered.length.toLocaleString()} channels${filtered.length>500?' (showing first 500)':''}.`:'No channels match these filters.';
-}
+ listEl.innerHTML='';for(const c of filtered.slice(0,600)){const b=document.createElement('button');b.className='channel';b.innerHTML=`<span>${escapeHtml(c.name)}</span><small>${favorites.has(c.id)?'★':'☆'}</small>`;b.onclick=()=>play(c);listEl.appendChild(b);}
+ statusEl.textContent=filtered.length?`${filtered.length.toLocaleString()} channels${filtered.length>600?' (showing first 600)':''}.`:'No channels match these filters.';}
 function escapeHtml(s){return s.replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
-async function load(){
- const btn=document.querySelector('#loadBtn');btn.disabled=true;
- channels=[];render();
- let lastError='Unknown error';
- try{
-  for(let i=0;i<PLAYLIST_URLS.length;i++){
-   statusEl.textContent=`Loading playlist source ${i+1} of ${PLAYLIST_URLS.length}…`;
-   try{
-    const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),20000);
-    let r;
-    try { r=await fetch(PLAYLIST_URLS[i],{signal:controller.signal,cache:'no-store'}); }
-    finally { clearTimeout(timer); }
-    if(!r.ok)throw Error('HTTP '+r.status);
-    const t=await r.text();const parsed=parseM3U(t);
-    if(!parsed.length)throw Error('No readable channels in playlist');
-    channels=parsed;render();statusEl.textContent=`Loaded ${channels.length.toLocaleString()} channels.`;return;
-   }catch(e){lastError=e.name==='AbortError'?'request timed out':(e.message||String(e));}
-  }
-  statusEl.textContent='Could not load channels: '+lastError+'. Check your internet connection and tap Load channels to retry.';
- }catch(e){statusEl.textContent='Could not load channels: '+(e.message||String(e));}
- finally{btn.disabled=false;}
+async function load(){const btn=document.querySelector('#loadBtn');btn.disabled=true;channels=[];render();PLAYLIST_URL=CATEGORY_PLAYLISTS[document.querySelector('#category').value]||CATEGORY_PLAYLISTS['All categories'];statusEl.textContent='Loading '+document.querySelector('#category').value+' playlist…';
+ try{const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),25000);let r;try{r=await fetch(PLAYLIST_URL,{signal:ctl.signal,cache:'no-store'});}finally{clearTimeout(timer);}
+  if(!r.ok)throw Error('HTTP '+r.status);const parsed=parseM3U(await r.text());if(!parsed.length)throw Error('No readable channels');channels=parsed;render();statusEl.textContent=`Loaded ${channels.length.toLocaleString()} channels from IPTV-org.`;
+ }catch(e){const reason=e.name==='AbortError'?'request timed out':e.message||String(e);statusEl.textContent='Could not load the selected playlist: '+reason+'. Check internet and retry.';
+ }finally{btn.disabled=false;}}
+function stopPlayback(){if(hls){hls.destroy();hls=null;}video.pause();video.removeAttribute('src');video.load();}
+function play(c){stopPlayback();selected=c;document.querySelector('#nowTitle').textContent=c.name;document.querySelector('#favBtn').textContent=favorites.has(c.id)?'★ Remove favorite':'☆ Add favorite';statusEl.textContent='Connecting to '+c.name+'…';
+ const url=c.url;
+ if(window.Hls&&Hls.isSupported()&&(/\.m3u8($|\?)/i.test(url)||/mpegurl/i.test(c.type||''))){
+   hls=new Hls({enableWorker:true,lowLatencyMode:false});hls.loadSource(url);hls.attachMedia(video);
+   hls.on(Hls.Events.MANIFEST_PARSED,()=>{video.play().then(()=>statusEl.textContent='Playing '+c.name+'.').catch(()=>statusEl.textContent='Stream loaded. Tap Play to start.');});
+   hls.on(Hls.Events.ERROR,(event,data)=>{if(data.fatal){statusEl.textContent='This stream could not play ('+data.type+'). Try another channel.';hls.destroy();hls=null;}});
+ }else{
+   video.src=url;
+   video.play().then(()=>statusEl.textContent='Playing '+c.name+'.').catch(()=>statusEl.textContent='This stream may be unsupported or unavailable. Try another channel or tap Play.');
+ }
+ video.onerror=()=>{statusEl.textContent='Playback failed for this stream. Try another channel; some public links are offline or blocked.';};
 }
-function play(c){selected=c;document.querySelector('#nowTitle').textContent=c.name;video.src=c.url;video.play().catch(()=>{statusEl.textContent='Channel selected. Tap Play; this stream may require a compatible browser or may be unavailable.'});document.querySelector('#favBtn').textContent=favorites.has(c.id)?'★ Remove favorite':'☆ Add favorite';}
-document.querySelector('#loadBtn').addEventListener('click',load);
-document.querySelector('#stopBtn').addEventListener('click',()=>{video.pause();video.removeAttribute('src');video.load();});
-document.querySelector('#favBtn').addEventListener('click',()=>{if(!selected)return;if(favorites.has(selected.id))favorites.delete(selected.id);else favorites.add(selected.id);localStorage.setItem('iptv-favorites',JSON.stringify([...favorites]));document.querySelector('#favBtn').textContent=favorites.has(selected.id)?'★ Remove favorite':'☆ Add favorite';render();});
-document.querySelector('#search').addEventListener('input',render);
-document.querySelector('#country').addEventListener('change',render);
-document.querySelector('#allBtn').addEventListener('click',()=>{showFavorites=false;render()});
-document.querySelector('#favoritesBtn').addEventListener('click',()=>{showFavorites=true;render()});
-</script>
-</body></html>
+const categorySelect=document.querySelector('#category');
+for(const name of Object.keys(CATEGORY_PLAYLISTS)){const opt=document.createElement('option');opt.value=name;opt.textContent=name;categorySelect.appendChild(opt);}
+categorySelect.value='All categories';
+categorySelect.onchange=()=>{channels=[];render();load();};
+document.querySelector('#loadBtn').onclick=load;
+document.querySelector('#stopBtn').onclick=()=>{stopPlayback();statusEl.textContent='Playback stopped.';};
+document.querySelector('#favBtn').onclick=()=>{if(!selected)return;if(favorites.has(selected.id))favorites.delete(selected.id);else favorites.add(selected.id);localStorage.setItem('iptv-favorites',JSON.stringify([...favorites]));document.querySelector('#favBtn').textContent=favorites.has(selected.id)?'★ Remove favorite':'☆ Add favorite';render();};
+document.querySelector('#search').oninput=render;document.querySelector('#country').onchange=render;
+document.querySelector('#allBtn').onclick=()=>{showFavorites=false;render();};document.querySelector('#favoritesBtn').onclick=()=>{showFavorites=true;render();};
+</script></body></html>
